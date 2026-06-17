@@ -1,0 +1,14 @@
+# Replit configuration.
+# Set FAL_KEY (and any overrides) in the Secrets pane, not here.
+run = "npm run build && npm run start"
+entrypoint = "server/src/index.ts"
+
+[env]
+PORT = "8787"
+
+[nix]
+channel = "stable-24_05"
+
+[[ports]]
+localPort = 8787
+externalPort = 80
