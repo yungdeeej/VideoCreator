@@ -1,0 +1,20 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+*.log
+npm-debug.log*
+
+# Runtime data (generated assets + JSON store)
+server/data/
+data/
+
+# Temp render scratch
+tmp/
+*.tmp
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
