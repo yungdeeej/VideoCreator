@@ -10,7 +10,7 @@ import {
 } from "@storyforge/shared";
 import { api } from "../api";
 import { navigate } from "../lib/router";
-import { projectCost } from "../lib/cost";
+import { projectCost, projectSpent } from "../lib/cost";
 import { Spinner } from "../components/ui";
 import { TopBar } from "../components/TopBar";
 import { SceneCard } from "../components/SceneCard";
@@ -51,6 +51,10 @@ export function ProjectEditor({
   const cost = useMemo(
     () => (project ? projectCost(project, config).total : 0),
     [project, config],
+  );
+  const spent = useMemo(
+    () => (view ? projectSpent(view, config) : 0),
+    [view, config],
   );
 
   async function generateAll() {
@@ -163,6 +167,7 @@ export function ProjectEditor({
         project={v}
         config={config}
         cost={cost}
+        spent={spent}
         busy={busy}
         onPatch={patchProject}
         onUploadReference={uploadReference}

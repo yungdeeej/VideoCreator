@@ -13,6 +13,7 @@ export interface TopBarProps {
   project: Project;
   config: PublicConfig;
   cost: number;
+  spent: number;
   busy: boolean;
   onPatch: (patch: UpdateProjectInput) => void;
   onUploadReference: (file: File) => void | Promise<void>;
@@ -25,7 +26,7 @@ export interface TopBarProps {
 }
 
 export function TopBar(props: TopBarProps) {
-  const { project, config, cost } = props;
+  const { project, config, cost, spent } = props;
   const [name, setName] = useState(project.name);
   const [showSettings, setShowSettings] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -68,11 +69,13 @@ export function TopBar(props: TopBarProps) {
           </Button>
 
           <div className="ml-auto flex items-center gap-3">
-            <div className="text-right">
+            <div className="text-right leading-tight">
               <div className="text-[10px] uppercase tracking-wide text-slate-500">
-                Est. total
+                Est. {fmtUSD(cost)}
               </div>
-              <div className="font-mono text-sm text-accent">{fmtUSD(cost)}</div>
+              <div className="font-mono text-sm text-accent" title="Actual spend so far">
+                spent {fmtUSD(spent)}
+              </div>
             </div>
             <Button
               variant="primary"

@@ -66,6 +66,7 @@ export function SceneCard(props: SceneCardProps) {
           {scene.error && (
             <p className="text-[11px] text-red-400 break-words">{scene.error}</p>
           )}
+          <Downloads scene={scene} needsEnd={needsEnd} />
           <div className="mt-auto flex gap-1.5">
             <Button
               variant="ghost"
@@ -210,6 +211,34 @@ export function SceneCard(props: SceneCardProps) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function Downloads({ scene, needsEnd }: { scene: Scene; needsEnd: boolean }) {
+  const links: Array<{ label: string; url: string }> = [];
+  if (needsEnd) {
+    if (scene.startImageUrl) links.push({ label: "start", url: scene.startImageUrl });
+    if (scene.endImageUrl) links.push({ label: "end", url: scene.endImageUrl });
+  } else if (scene.imageUrl ?? scene.startImageUrl) {
+    links.push({ label: "still", url: (scene.imageUrl ?? scene.startImageUrl)! });
+  }
+  if (scene.videoUrl) links.push({ label: "clip", url: scene.videoUrl });
+  if (links.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-slate-500">
+      {links.map((l) => (
+        <a
+          key={l.label}
+          href={l.url}
+          download
+          target="_blank"
+          rel="noreferrer"
+          className="hover:text-accent underline decoration-dotted"
+        >
+          ↓ {l.label}
+        </a>
+      ))}
     </div>
   );
 }
