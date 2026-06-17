@@ -78,10 +78,15 @@ export const api = {
   // generation (Phase 5)
   generateAll: (id: string) =>
     req<{ started: boolean }>(`/projects/${id}/generate`, { method: "POST" }),
-  regenerateItem: (id: string, itemId: string) =>
-    req<{ started: boolean }>(`/projects/${id}/items/${itemId}/regenerate`, {
-      method: "POST",
-    }),
+  regenerateItem: (
+    id: string,
+    itemId: string,
+    stage: "all" | "video" = "all",
+  ) =>
+    req<{ started: boolean }>(
+      `/projects/${id}/items/${itemId}/regenerate${stage === "video" ? "?stage=video" : ""}`,
+      { method: "POST" },
+    ),
   getStatus: (id: string) => req<ProjectStatus>(`/projects/${id}/status`),
   getCost: (id: string) => req<ProjectCostEstimate>(`/projects/${id}/cost`),
 

@@ -15,6 +15,8 @@ import { Spinner } from "../components/ui";
 import { TopBar } from "../components/TopBar";
 import { SceneCard } from "../components/SceneCard";
 import { TitleCardItem } from "../components/TitleCardItem";
+import { useStatusPolling } from "../hooks/useStatusPolling";
+import { mergeStatus } from "../lib/mergeStatus";
 
 export function ProjectEditor({
   projectId,
@@ -25,6 +27,7 @@ export function ProjectEditor({
 }) {
   const [project, setProject] = useState<Project | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { status, poke } = useStatusPolling(projectId);
 
   useEffect(() => {
     api
@@ -33,15 +36,40 @@ export function ProjectEditor({
       .catch((e) => setError(e.message));
   }, [projectId]);
 
+  // Canonical project carries editable fields; live status overlays progress.
+  const view = useMemo(
+    () => (project ? mergeStatus(project, status) : null),
+    [project, status],
+  );
+  const busy = status?.busy ?? false;
+
   const sorted = useMemo(
-    () => (project ? [...project.items].sort((a, b) => a.order - b.order) : []),
-    [project],
+    () => (view ? [...view.items].sort((a, b) => a.order - b.order) : []),
+    [view],
   );
 
   const cost = useMemo(
     () => (project ? projectCost(project, config).total : 0),
     [project, config],
   );
+
+  async function generateAll() {
+    try {
+      await api.generateAll(projectId);
+      poke();
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
+
+  async function regenerate(itemId: string, stage: "all" | "video") {
+    try {
+      await api.regenerateItem(projectId, itemId, stage);
+      poke();
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
 
   // ---- mutations (server is source of truth; response replaces local) ----
   const guard = useCallback(
@@ -111,28 +139,30 @@ export function ProjectEditor({
       </div>
     );
   }
-  if (!project) {
+  if (!project || !view) {
     return (
       <div className="min-h-full flex items-center justify-center">
         <Spinner className="text-accent" />
       </div>
     );
   }
+  const v = view;
 
   return (
     <div className="min-h-full">
       <TopBar
-        project={project}
+        project={v}
         config={config}
         cost={cost}
-        busy={false}
+        busy={busy}
         onPatch={patchProject}
         onUploadReference={uploadReference}
-        exportStatus={project.exportStatus}
-        exportProgress={project.exportProgress}
-        exportUrl={project.exportUrl}
+        onGenerateAll={generateAll}
+        exportStatus={v.exportStatus}
+        exportProgress={v.exportProgress}
+        exportUrl={v.exportUrl}
         onBack={() => navigate({ name: "list" })}
-        // onGenerateAll / onCombine wired in Phases 5 & 6
+        // onCombine wired in Phase 6
       />
 
       <div className="mx-auto max-w-5xl px-6 py-6 space-y-1">
@@ -150,13 +180,16 @@ export function ProjectEditor({
                   scene={item}
                   index={sceneNumber}
                   config={config}
-                  aspect={project.aspectRatio}
+                  aspect={v.aspectRatio}
                   onChange={(patch) => patchScene(item.id, patch)}
                   onDelete={() => removeItem(item.id)}
                   onMoveUp={i > 0 ? () => move(item.id, -1) : undefined}
                   onMoveDown={
                     i < sorted.length - 1 ? () => move(item.id, 1) : undefined
                   }
+                  onRegenerateImage={() => regenerate(item.id, "all")}
+                  onRegenerateVideo={() => regenerate(item.id, "video")}
+                  disabled={busy}
                 />
               ) : isTitleCard(item) ? (
                 <TitleCardItem

@@ -1,4 +1,5 @@
-import { Router, type RequestHandler } from "express";
+import { Router } from "express";
+import { asyncRoute } from "../util/route.js";
 import {
   addScene,
   addTitleCard,
@@ -8,27 +9,12 @@ import {
   getProject,
   listProjects,
   reorderItems,
-  StoreNotFoundError,
   updateProject,
   updateScene,
   updateTitleCard,
 } from "../services/project.service.js";
 
 export const projectsRouter = Router();
-
-/** Wrap an async handler so rejections become clean HTTP errors. */
-function asyncRoute(
-  fn: (req: Parameters<RequestHandler>[0], res: Parameters<RequestHandler>[1]) => Promise<void>,
-): RequestHandler {
-  return (req, res) => {
-    fn(req, res).catch((err: any) => {
-      const msg = err?.message ?? String(err);
-      const notFound =
-        err instanceof StoreNotFoundError || /not found/i.test(msg);
-      res.status(notFound ? 404 : 500).json({ error: msg });
-    });
-  };
-}
 
 // ---------- projects ----------
 
