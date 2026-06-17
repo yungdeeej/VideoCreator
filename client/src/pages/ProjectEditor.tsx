@@ -71,6 +71,15 @@ export function ProjectEditor({
     }
   }
 
+  async function combine() {
+    try {
+      await api.combine(projectId);
+      poke();
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
+
   // ---- mutations (server is source of truth; response replaces local) ----
   const guard = useCallback(
     async (fn: () => Promise<Project>) => {
@@ -158,11 +167,11 @@ export function ProjectEditor({
         onPatch={patchProject}
         onUploadReference={uploadReference}
         onGenerateAll={generateAll}
+        onCombine={combine}
         exportStatus={v.exportStatus}
         exportProgress={v.exportProgress}
         exportUrl={v.exportUrl}
         onBack={() => navigate({ name: "list" })}
-        // onCombine wired in Phase 6
       />
 
       <div className="mx-auto max-w-5xl px-6 py-6 space-y-1">
