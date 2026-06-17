@@ -7,8 +7,15 @@ import {
   assembleImagePrompt,
   generateImage,
 } from "../services/image.service.js";
-import { DEFAULT_STYLE_PRESET } from "../config/models.config.js";
-import type { AspectRatio } from "@storyforge/shared";
+import {
+  assembleMotionPrompt,
+  generateVideo,
+} from "../services/video.service.js";
+import {
+  DEFAULT_MOTION_SUFFIX,
+  DEFAULT_STYLE_PRESET,
+} from "../config/models.config.js";
+import type { AspectRatio, VideoModelKey } from "@storyforge/shared";
 
 export const assetsRouter = Router();
 
@@ -74,6 +81,43 @@ assetsRouter.post("/dev/generate-image", async (req, res) => {
       referenceImageUrl,
     });
     res.json({ url, assembledPrompt: prompt });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message ?? String(err) });
+  }
+});
+
+/**
+ * Dev helper (Phase 3): generate a single clip from a start image + motion
+ * prompt (Kling), or start+end images (Seedance). Tests video generation for
+ * a single scene before the batch flow exists.
+ */
+assetsRouter.post("/dev/generate-video", async (req, res) => {
+  try {
+    const {
+      videoModel = "kling",
+      motionPrompt = "",
+      motionSuffix = DEFAULT_MOTION_SUFFIX,
+      startImageUrl,
+      endImageUrl,
+      durationSec = 5,
+      aspectRatio = "16:9",
+    } = req.body ?? {};
+
+    if (!startImageUrl || typeof startImageUrl !== "string") {
+      res.status(400).json({ error: "startImageUrl (string) is required" });
+      return;
+    }
+
+    const prompt = assembleMotionPrompt(motionPrompt, motionSuffix);
+    const url = await generateVideo({
+      model: videoModel as VideoModelKey,
+      motionPrompt: prompt,
+      startImageUrl,
+      endImageUrl,
+      durationSec: Number(durationSec),
+      aspect: aspectRatio as AspectRatio,
+    });
+    res.json({ url, assembledMotionPrompt: prompt });
   } catch (err: any) {
     res.status(500).json({ error: err?.message ?? String(err) });
   }
