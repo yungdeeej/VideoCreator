@@ -35,6 +35,10 @@ export const env = {
   PORT: int("PORT", 8787),
   FAL_KEY: process.env.FAL_KEY?.trim() || "",
   FAL_MOCK: process.env.FAL_MOCK === "1" || process.env.FAL_MOCK === "true",
+  ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY?.trim() || "",
+  ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL?.trim() || "claude-opus-4-8",
+  CLAUDE_MOCK:
+    process.env.CLAUDE_MOCK === "1" || process.env.CLAUDE_MOCK === "true",
   FFMPEG_PATH: process.env.FFMPEG_PATH?.trim() || "ffmpeg",
   FFPROBE_PATH: process.env.FFPROBE_PATH?.trim() || "ffprobe",
   FONT_FILE:
@@ -55,3 +59,4 @@ export const env = {
 } as const;
 
 export const hasFal = () => env.FAL_MOCK || !!env.FAL_KEY;
+export const hasClaude = () => env.CLAUDE_MOCK || !!env.ANTHROPIC_API_KEY;

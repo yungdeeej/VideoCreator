@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   isScene,
   isTitleCard,
+  type DraftStoryboardResult,
   type Project,
   type PublicConfig,
   type UpdateProjectInput,
@@ -15,6 +16,8 @@ import { Spinner } from "../components/ui";
 import { TopBar } from "../components/TopBar";
 import { SceneCard } from "../components/SceneCard";
 import { TitleCardItem } from "../components/TitleCardItem";
+import { StoryboardModal } from "../components/StoryboardModal";
+import { Button } from "../components/ui";
 import { useStatusPolling } from "../hooks/useStatusPolling";
 import { mergeStatus } from "../lib/mergeStatus";
 
@@ -27,6 +30,7 @@ export function ProjectEditor({
 }) {
   const [project, setProject] = useState<Project | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showStoryboard, setShowStoryboard] = useState(false);
   const { status, poke } = useStatusPolling(projectId);
 
   useEffect(() => {
@@ -82,6 +86,45 @@ export function ProjectEditor({
     } catch (e: any) {
       setError(e.message);
     }
+  }
+
+  // ---- Claude prompt assistant ----
+  async function suggestScene(sceneId: string, idea: string) {
+    if (!project) return;
+    const scene = project.items.find((i) => i.id === sceneId);
+    const videoModel = scene && isScene(scene) ? scene.videoModel : "kling";
+    const suggestion = await api.assistScene({
+      idea,
+      videoModel,
+      aspectRatio: project.aspectRatio,
+      stylePreset: project.stylePreset,
+    });
+    await patchScene(sceneId, {
+      imagePrompt: suggestion.imagePrompt,
+      motionPrompt: suggestion.motionPrompt,
+      ...(suggestion.endImagePrompt
+        ? { endImagePrompt: suggestion.endImagePrompt }
+        : {}),
+    });
+  }
+
+  async function applyStoryboard(
+    result: DraftStoryboardResult,
+    opts: { setTitle: boolean },
+  ) {
+    let latest: Project | null = null;
+    for (const s of result.scenes) {
+      latest = await api.addScene(projectId, {
+        imagePrompt: s.imagePrompt,
+        motionPrompt: s.motionPrompt,
+      });
+    }
+    if (opts.setTitle && result.suggestedTitle) {
+      latest = await api.updateProject(projectId, {
+        name: result.suggestedTitle,
+      });
+    }
+    if (latest) setProject(latest);
   }
 
   // ---- mutations (server is source of truth; response replaces local) ----
@@ -182,6 +225,14 @@ export function ProjectEditor({
       <div className="mx-auto max-w-5xl px-6 py-6 space-y-1">
         {error && <p className="text-sm text-red-400">{error}</p>}
 
+        {config.assistAvailable && (
+          <div className="flex justify-end pb-1">
+            <Button variant="ghost" onClick={() => setShowStoryboard(true)}>
+              <span className="text-accent">✨</span> Draft storyboard with AI
+            </Button>
+          </div>
+        )}
+
         <InsertRow onInsert={(k) => insertAt(k, 0)} />
 
         {sorted.map((item, i) => {
@@ -203,6 +254,11 @@ export function ProjectEditor({
                   }
                   onRegenerateImage={() => regenerate(item.id, "all")}
                   onRegenerateVideo={() => regenerate(item.id, "video")}
+                  onSuggest={
+                    config.assistAvailable
+                      ? (idea) => suggestScene(item.id, idea)
+                      : undefined
+                  }
                   disabled={busy}
                 />
               ) : isTitleCard(item) ? (
@@ -223,10 +279,21 @@ export function ProjectEditor({
 
         {sorted.length === 0 && (
           <p className="py-12 text-center text-slate-500">
-            Empty storyboard — add your first scene or title card above.
+            Empty storyboard — add your first scene or title card above
+            {config.assistAvailable ? ", or ✨ draft one with AI" : ""}.
           </p>
         )}
       </div>
+
+      {showStoryboard && (
+        <StoryboardModal
+          config={config}
+          aspectRatio={v.aspectRatio}
+          stylePreset={v.stylePreset}
+          onClose={() => setShowStoryboard(false)}
+          onApply={applyStoryboard}
+        />
+      )}
     </div>
   );
 }

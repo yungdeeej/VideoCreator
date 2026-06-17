@@ -50,6 +50,23 @@ shared/   @storyforge/shared                        — shared types (one source
    centered text, per-scene overlays are burned in with `drawtext`, and
    everything is concatenated in `order` via the concat demuxer into one MP4.
 
+### Prompt assistant (Claude)
+
+An optional **prompt assistant** uses Claude (Anthropic API, model
+`claude-opus-4-8` by default) to turn rough ideas into shoot-ready prompts —
+all calls happen on the backend, `ANTHROPIC_API_KEY` never reaches the browser:
+
+- **✨ Suggest** on a scene expands a one-line idea into a polished image prompt
+  + a matching motion prompt (and an end-frame prompt for Seedance morphs),
+  tuned to the project's style preset.
+- **✨ Draft storyboard** turns a logline + scene count into an ordered set of
+  scene prompts (with a suggested title) you can apply in one click.
+
+It uses the Anthropic SDK's **structured outputs** so responses are always
+valid JSON, and adaptive thinking for the storyboard step. The assistant is
+hidden in the UI unless it's configured. Set `CLAUDE_MOCK=1` to exercise it
+with templated suggestions and no API key.
+
 ### Model configuration
 
 All model IDs, prices, and defaults live in
@@ -87,6 +104,9 @@ cp .env.example .env        # then edit .env and set FAL_KEY
 | Var                   | Default                | Purpose                                            |
 | --------------------- | ---------------------- | -------------------------------------------------- |
 | `FAL_KEY`             | —                      | fal.ai API key (**backend secret**). Required.     |
+| `ANTHROPIC_API_KEY`   | —                      | Anthropic key for the prompt assistant (optional, backend secret). |
+| `ANTHROPIC_MODEL`     | `claude-opus-4-8`      | Claude model used by the prompt assistant.         |
+| `CLAUDE_MOCK`         | `0`                    | `1` = templated prompt suggestions, no Claude calls. |
 | `PORT`                | `8787`                 | Backend HTTP port.                                 |
 | `DATA_DIR`            | `server/data`          | Where the JSON store + assets live.                |
 | `FFMPEG_PATH`         | `ffmpeg`               | ffmpeg binary path.                                |
@@ -123,6 +143,13 @@ the UI, the parallel batch, and the export end-to-end.
 
 ```bash
 FAL_MOCK=1 npm run dev
+```
+
+Add `CLAUDE_MOCK=1` to also exercise the prompt assistant without an Anthropic
+key (it returns templated suggestions instead of calling Claude):
+
+```bash
+FAL_MOCK=1 CLAUDE_MOCK=1 npm run dev
 ```
 
 ---
@@ -167,6 +194,8 @@ FAL_MOCK=1 npm run dev
 | GET    | `/api/projects/:id/cost`                      | cost estimate                    |
 | POST   | `/api/projects/:id/export`                    | start combine + export           |
 | POST   | `/api/upload/reference`                        | upload character reference       |
+| POST   | `/api/assist/scene`                            | expand an idea → image + motion prompt |
+| POST   | `/api/assist/storyboard`                       | logline → ordered scene prompts  |
 
 ---
 

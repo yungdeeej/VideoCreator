@@ -123,6 +123,8 @@ export function toVideoModelInfo(m: VideoModelConfig): VideoModelInfo {
 export function buildPublicConfig(opts: {
   maxConcurrentJobs: number;
   mockMode: boolean;
+  assistAvailable: boolean;
+  assistMock: boolean;
 }): PublicConfig {
   return {
     videoModels: Object.values(VIDEO_MODELS).map(toVideoModelInfo),
@@ -135,5 +137,7 @@ export function buildPublicConfig(opts: {
     defaultMotionSuffix: DEFAULT_MOTION_SUFFIX,
     maxConcurrentJobs: opts.maxConcurrentJobs,
     mockMode: opts.mockMode,
+    assistAvailable: opts.assistAvailable,
+    assistMock: opts.assistMock,
   };
 }

@@ -2,10 +2,14 @@ import type {
   CreateProjectInput,
   CreateSceneInput,
   CreateTitleCardInput,
+  DraftStoryboardInput,
+  DraftStoryboardResult,
   Project,
   ProjectCostEstimate,
   ProjectStatus,
   PublicConfig,
+  SceneSuggestion,
+  SuggestSceneInput,
   UpdateProjectInput,
   UpdateSceneInput,
   UpdateTitleCardInput,
@@ -93,6 +97,15 @@ export const api = {
   // export (Phase 6)
   combine: (id: string) =>
     req<{ started: boolean }>(`/projects/${id}/export`, { method: "POST" }),
+
+  // Claude prompt assistant
+  assistScene: (input: SuggestSceneInput) =>
+    req<SceneSuggestion>("/assist/scene", { method: "POST", json: input }),
+  draftStoryboard: (input: DraftStoryboardInput) =>
+    req<DraftStoryboardResult>("/assist/storyboard", {
+      method: "POST",
+      json: input,
+    }),
 
   // uploads
   uploadReference: async (file: File): Promise<string> => {

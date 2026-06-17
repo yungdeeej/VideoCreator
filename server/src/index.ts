@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import fs from "node:fs";
-import { env, hasFal } from "./env.js";
+import { env, hasFal, hasClaude } from "./env.js";
 import { buildPublicConfig } from "./config/models.config.js";
 
 const app = express();
@@ -21,6 +21,8 @@ app.get("/api/health", (_req, res) => {
     falConfigured: !!env.FAL_KEY,
     mockMode: env.FAL_MOCK,
     ready: hasFal(),
+    claudeConfigured: !!env.ANTHROPIC_API_KEY,
+    claudeReady: hasClaude(),
     time: new Date().toISOString(),
   });
 });
@@ -30,6 +32,8 @@ app.get("/api/config", (_req, res) => {
     buildPublicConfig({
       maxConcurrentJobs: env.MAX_CONCURRENT_JOBS,
       mockMode: env.FAL_MOCK,
+      assistAvailable: hasClaude(),
+      assistMock: env.CLAUDE_MOCK,
     }),
   );
 });
@@ -41,10 +45,12 @@ async function mountRoutes() {
   const { generateRouter } = await import("./routes/generate.routes.js");
   const { assetsRouter } = await import("./routes/assets.routes.js");
   const { exportRouter } = await import("./routes/export.routes.js");
+  const { assistRouter } = await import("./routes/assist.routes.js");
   app.use("/api/projects", projectsRouter);
   app.use("/api/projects", generateRouter);
   app.use("/api/projects", exportRouter);
   app.use("/api", assetsRouter);
+  app.use("/api/assist", assistRouter);
 }
 
 // ---------- production: serve built client ----------

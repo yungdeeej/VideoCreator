@@ -126,6 +126,40 @@ export interface PublicConfig {
   defaultMotionSuffix: string;
   maxConcurrentJobs: number;
   mockMode: boolean;
+  /** True if the Claude prompt-assistant is usable (real key or mock). */
+  assistAvailable: boolean;
+  /** True if the assistant is running in mock mode (no real Claude calls). */
+  assistMock: boolean;
+}
+
+// ---------- Claude prompt assistant ----------
+
+export interface SceneSuggestion {
+  imagePrompt: string;
+  motionPrompt: string;
+  /** Morph target for Seedance scenes; empty string when not applicable. */
+  endImagePrompt: string;
+}
+
+export interface SuggestSceneInput {
+  /** Rough idea / description the user typed (or the current image prompt). */
+  idea: string;
+  videoModel: VideoModelKey;
+  aspectRatio: AspectRatio;
+  /** Style preset is sent for context; the model must NOT repeat it. */
+  stylePreset?: string;
+}
+
+export interface DraftStoryboardInput {
+  logline: string;
+  sceneCount: number;
+  aspectRatio: AspectRatio;
+  stylePreset?: string;
+}
+
+export interface DraftStoryboardResult {
+  suggestedTitle: string;
+  scenes: Array<{ imagePrompt: string; motionPrompt: string }>;
 }
 
 export interface SceneCostEstimate {

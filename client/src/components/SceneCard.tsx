@@ -6,7 +6,7 @@ import type {
   TextOverlay,
   UpdateSceneInput,
 } from "@storyforge/shared";
-import { Button, Label, Select, StatusBadge, TextArea } from "./ui";
+import { Button, Label, Select, Spinner, StatusBadge, TextArea } from "./ui";
 import { fmtUSD, sceneCost } from "../lib/cost";
 
 const OVERLAY_POSITIONS: TextOverlay["position"][] = [
@@ -30,6 +30,8 @@ export interface SceneCardProps {
   onMoveDown?: () => void;
   onRegenerateImage?: () => void;
   onRegenerateVideo?: () => void;
+  /** Expand the given idea into image + motion prompts (Claude assistant). */
+  onSuggest?: (idea: string) => Promise<void>;
   disabled?: boolean;
 }
 
@@ -52,6 +54,19 @@ export function SceneCard(props: SceneCardProps) {
   );
 
   const [showOverlay, setShowOverlay] = useState(!!scene.textOverlay);
+  const [suggesting, setSuggesting] = useState(false);
+
+  async function suggest() {
+    if (!props.onSuggest) return;
+    const idea = imagePrompt.trim();
+    if (!idea) return;
+    setSuggesting(true);
+    try {
+      await props.onSuggest(idea);
+    } finally {
+      setSuggesting(false);
+    }
+  }
 
   return (
     <div className="rounded-2xl border border-ink-700 bg-ink-900 overflow-hidden">
@@ -114,7 +129,19 @@ export function SceneCard(props: SceneCardProps) {
           </div>
 
           <div>
-            <Label>Image prompt</Label>
+            <div className="flex items-center justify-between">
+              <Label>Image prompt</Label>
+              {props.onSuggest && (
+                <button
+                  className="mb-1 inline-flex items-center gap-1 rounded text-[11px] text-accent hover:text-accent-soft disabled:opacity-40"
+                  onClick={suggest}
+                  disabled={suggesting || props.disabled || !imagePrompt.trim()}
+                  title="Expand this idea into polished image + motion prompts (Claude)"
+                >
+                  {suggesting ? <Spinner /> : "✨"} Suggest
+                </button>
+              )}
+            </div>
             <TextArea
               rows={2}
               value={imagePrompt}
@@ -123,7 +150,7 @@ export function SceneCard(props: SceneCardProps) {
                 imagePrompt !== scene.imagePrompt &&
                 props.onChange({ imagePrompt })
               }
-              placeholder="What the still should depict…"
+              placeholder="A rough idea works — then hit ✨ Suggest…"
             />
           </div>
 
